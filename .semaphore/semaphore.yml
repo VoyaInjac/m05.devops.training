@@ -20,7 +20,7 @@ blocks:
   - name: Deploy to Kubernetes
     task:
       secrets:
-        - name: dockerhub
+        - name: DOCKER_vinjac
         - name: kubeconfig
       jobs:
         - name: kubectl apply
