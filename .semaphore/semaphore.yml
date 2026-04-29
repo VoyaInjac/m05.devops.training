@@ -11,27 +11,31 @@ blocks:
         - name: Docker build and push
           commands:
             - checkout
-            - cd 1-deployment
+            - cd 2-blue-green-deployment
             - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-            - 'docker build -t "$DOCKER_USERNAME/my-flask-image:latest" .'
-            - 'docker push "$DOCKER_USERNAME/my-flask-image:latest"'
+            - docker build -t "$DOCKER_USERNAME/my-flask-image:latest" .
+            - docker push "$DOCKER_USERNAME/my-flask-image:latest"
       secrets:
         - name: DOCKER_vinjac
   - name: Deploy to Kubernetes
+    dependencies:
+      - Build and Push Image
     task:
       jobs:
         - name: kubectl apply
           commands:
             - checkout
-            - cd 1-deployment
+            - cd 2-blue-green-deployment
             - kubectl create namespace g3 || true
             - kubectl config set-context --current --namespace=g3
-            - kubectl apply -f deployment.yml
-            - kubectl apply -f service.yml
-            - kubectl rollout status deployment/flask-app
+            - kubectl apply -f deployment-blue.yml
+            - kubectl apply -f service-blue.yml
+            - kubectl rollout status deployment/flask-app-blue
       secrets:
         - name: kubeconfig
   - name: Verify
+    dependencies:
+      - Deploy to Kubernetes
     task:
       secrets:
         - name: kubeconfig
@@ -40,3 +44,7 @@ blocks:
           commands:
             - kubectl config set-context --current --namespace=g3
             - kubectl get svc flask-app
+
+promotions:
+  - name: Deploy Green
+    pipeline_file: deploy-green.yml

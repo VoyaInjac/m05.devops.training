@@ -1,0 +1,34 @@
+version: v1.0
+name: Deploy Green
+agent:
+  machine:
+    type: f1-standard-4
+    os_image: ubuntu2204
+
+blocks:
+  - name: Deploy Green
+    task:
+      jobs:
+        - name: kubectl apply green
+          commands:
+            - checkout
+            - cd 2-blue-green-deployment
+            - kubectl create namespace g3 || true
+            - kubectl config set-context --current --namespace=g3
+            - kubectl apply -f deployment-green.yml
+            - kubectl apply -f service-green.yml
+            - kubectl rollout status deployment/flask-app-green
+      secrets:
+        - name: kubeconfig
+
+  - name: Verify Green
+    dependencies:
+      - Deploy Green
+    task:
+      jobs:
+        - name: Check service
+          commands:
+            - kubectl config set-context --current --namespace=g3
+            - kubectl get svc flask-app
+      secrets:
+        - name: kubeconfig
