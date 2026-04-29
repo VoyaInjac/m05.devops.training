@@ -18,8 +18,6 @@ blocks:
       secrets:
         - name: DOCKER_vinjac
   - name: Deploy to Kubernetes
-    dependencies:
-      - Build and Push Image
     task:
       jobs:
         - name: kubectl apply
@@ -34,8 +32,6 @@ blocks:
       secrets:
         - name: kubeconfig
   - name: Verify
-    dependencies:
-      - Deploy to Kubernetes
     task:
       secrets:
         - name: kubeconfig
