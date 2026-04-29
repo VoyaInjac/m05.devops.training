@@ -1,48 +1,50 @@
-# This is a simple Semaphore configuration file
-# For more information about Semaphore configuration visit:
-# https://docs.semaphoreci.com/reference/pipeline-yaml-reference/
-
-version: v1.0  # Semaphore configuration version
-name: "🎯 Simple CI Pipeline"  # Pipeline display name
-
-# Define the machine type and OS image
+version: v1.0
+name: Flask Kubernetes Deploy
 agent:
   machine:
-    type: a2-standard-4
-    os_image: macos-xcode16
+    type: e1-standard-2
+    os_image: ubuntu2004
 
-# Configure when to stop the pipeline early
-fail_fast:
-  stop:
-    when: branch != 'main'  # Stop all blocks if a job fails on non-main branches
-auto_cancel:
-  running:
-    when: branch != 'main'  # Cancel running pipelines on non-main branches
-  queued:
-    when: branch = 'main'   # Cancel queued pipelines on main branch
-
-# Pipeline blocks represent groups of jobs that can run in parallel
 blocks:
-  # Block for testing
-  - name: "🧪 Test"
-    dependencies: []
+  - name: Build and Push Image
     task:
+      secrets:
+        - name: dockerhub
       jobs:
-        - name: "🟢 Run Tests"
+        - name: Docker build and push
           commands:
-            - echo "Checking out code..."
-            - echo "Installing dependencies..."
-            - echo "Running test suite..."
-            - echo "Tests completed successfully!"
+            - checkout
+            - cd 1-deployment
+            - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            - docker build -t "$DOCKERHUB_USERNAME/my-flask-image:latest" .
+            - docker push "$DOCKERHUB_USERNAME/my-flask-image:latest"
 
-  # Block for deployment
-  - name: "🚀 Deploy"
-    dependencies: ["🧪 Test"]  # Only deploy if tests pass
+  - name: Deploy to Kubernetes
     task:
+      secrets:
+        - name: dockerhub
+        - name: kubeconfig
       jobs:
-        - name: "📦 Deploy to Production"
+        - name: kubectl apply
           commands:
-            - echo "Building application..."
-            - echo "Running security checks..."
-            - echo "Deploying to production..."
-            - echo "Deployment completed successfully!"
+            - checkout
+            - cd 1-deployment
+            - echo "$KUBECONFIG_BASE64" | base64 -d > /tmp/kubeconfig
+            - export KUBECONFIG=/tmp/kubeconfig
+            - kubectl create namespace g3 || true
+            - kubectl config set-context --current --namespace=g3
+            - kubectl apply -f deployment.yml
+            - kubectl apply -f service.yml
+            - kubectl rollout status deployment/flask-app
+
+  - name: Verify
+    task:
+      secrets:
+        - name: kubeconfig
+      jobs:
+        - name: Check service
+          commands:
+            - echo "$KUBECONFIG_BASE64" | base64 -d > /tmp/kubeconfig
+            - export KUBECONFIG=/tmp/kubeconfig
+            - kubectl config set-context --current --namespace=g3
+            - kubectl get svc flask-app
