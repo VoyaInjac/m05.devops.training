@@ -38,6 +38,5 @@ blocks:
       jobs:
         - name: Check service
           commands:
-            - mkdir -p ~/.kube && echo "$KUBECONFIG_BASE64" | base64 -d > ~/.kube/config
             - kubectl config set-context --current --namespace=g3
             - kubectl get svc flask-app
