@@ -17,6 +17,7 @@ blocks:
             - 'docker push "$DOCKERHUB_USERNAME/my-flask-image:latest"'
       secrets:
         - name: DOCKER_vinjac
+        - name: dockerhub
   - name: Deploy to Kubernetes
     task:
       secrets:
