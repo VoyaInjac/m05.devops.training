@@ -12,9 +12,9 @@ blocks:
           commands:
             - checkout
             - cd 1-deployment
-            - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-            - 'docker build -t "$DOCKERHUB_USERNAME/my-flask-image:latest" .'
-            - 'docker push "$DOCKERHUB_USERNAME/my-flask-image:latest"'
+            - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+            - 'docker build -t "$DOCKER_USERNAME/my-flask-image:latest" .'
+            - 'docker push "$DOCKER_USERNAME/my-flask-image:latest"'
       secrets:
         - name: DOCKER_vinjac
   - name: Deploy to Kubernetes
