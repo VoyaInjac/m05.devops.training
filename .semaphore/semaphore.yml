@@ -11,7 +11,7 @@ blocks:
         - name: Docker build and push
           commands:
             - checkout
-            - cd 2-blue-green-deployment
+            - cd 3-canary-deployment
             - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
             - docker build -t "$DOCKER_USERNAME/my-flask-image:latest" .
             - docker push "$DOCKER_USERNAME/my-flask-image:latest"
@@ -23,12 +23,12 @@ blocks:
         - name: kubectl apply
           commands:
             - checkout
-            - cd 2-blue-green-deployment
+            - cd 3-canary-deployment
             - kubectl create namespace g3 || true
             - kubectl config set-context --current --namespace=g3
-            - kubectl apply -f deployment-blue.yml
-            - kubectl apply -f service-blue.yml
-            - kubectl rollout status deployment/flask-app-blue
+            - kubectl apply -f deployment-stable.yml
+            - kubectl apply -f service.yml
+            - kubectl rollout status deployment/flask-app-stable
       secrets:
         - name: kubeconfig
   - name: Verify
@@ -42,5 +42,5 @@ blocks:
             - kubectl get svc flask-app
 
 promotions:
-  - name: Deploy Green
-    pipeline_file: deploy-green.yml
+  - name: Deploy Canary
+    pipeline_file: deploy-canary.yml
