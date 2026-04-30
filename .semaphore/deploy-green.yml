@@ -22,8 +22,6 @@ blocks:
         - name: kubeconfig
 
   - name: Verify Green
-    dependencies:
-      - Deploy Green
     task:
       jobs:
         - name: Check service
